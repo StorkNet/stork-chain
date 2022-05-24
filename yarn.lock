@@ -1106,10 +1106,10 @@ growl@1.10.5:
   resolved "https://registry.yarnpkg.com/growl/-/growl-1.10.5.tgz#f2735dc2283674fa67478b10181059355c369e5e"
   integrity sha512-qBr4OuELkhPenW6goKVXiv47US3clb3/IbuWF9KNKEijAy9oeHxU9IgzjvJhHkUzhaj7rOUD7+YGWqUjLp5oSA==
 
-hardhat@^2.9.4:
-  version "2.9.4"
-  resolved "https://registry.yarnpkg.com/hardhat/-/hardhat-2.9.4.tgz#ecb587f98ae9b14b66c9d401bf970669f4335013"
-  integrity sha512-7hpJz1lXz3H/1shcI284xgQ9WPdXGMuXKoNj8ySJKG7pdifB/lNs1o+Kx/P4TKFwhOiGQYH51/wS2NHKI+dPfg==
+hardhat@^2.9.6:
+  version "2.9.6"
+  resolved "https://registry.yarnpkg.com/hardhat/-/hardhat-2.9.6.tgz#9b75d8efccdfc20bdea35ffb0fd4e6a3f3ecf3cf"
+  integrity sha512-Vnm1iDfhbavNjvLxArt47rt6G3vPIV4Q/+pNgFkh6sfQH8JVf8px5VxiEs5cj4rPxmU+DXGKoalY+pK8fAL4oA==
   dependencies:
     "@ethereumjs/block" "^3.6.2"
     "@ethereumjs/blockchain" "^5.5.2"
@@ -1138,7 +1138,7 @@ hardhat@^2.9.4:
     find-up "^2.1.0"
     fp-ts "1.19.3"
     fs-extra "^7.0.1"
-    glob "^7.1.3"
+    glob "7.2.0"
     immutable "^4.0.0-rc.12"
     io-ts "1.10.4"
     lodash "^4.17.11"
