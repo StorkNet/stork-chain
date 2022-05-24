@@ -30,7 +30,7 @@ contract StorkBlock is StorkTypes {
     modifier isNotLocked(bool _expectedVal) {
         require(
             (block.timestamp < nextBlockLockTime) == _expectedVal,
-            "block not locked"
+            "block locked"
         );
         _;
     }
@@ -46,11 +46,13 @@ contract StorkBlock is StorkTypes {
     mapping(string => QueryInfo) public queryInfo;
 
     uint256 public blockLockDuration;
+    uint256 public blockCreateDuration;
     uint256 public nextBlockLockTime = block.timestamp;
     uint256 public percentageToPass;
 
     function setNextBlockLockTime() public {
         nextBlockLockTime += blockLockDuration;
+        blockCreateDuration = nextBlockLockTime - 1 minutes;
     }
 
     function setNewBlockLockDuration(uint256 _blockLockDuration) public {
@@ -60,6 +62,11 @@ contract StorkBlock is StorkTypes {
 
     function setPercentageToPass(uint256 _percentageToPass) external {
         percentageToPass = _percentageToPass;
+    }
+
+    // temporary function for testing
+    function returnBlockTimeStamp() public view returns (uint256) {
+        return (block.timestamp);
     }
 
     function setOperationData() internal {
