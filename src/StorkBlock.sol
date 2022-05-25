@@ -32,6 +32,8 @@ contract StorkBlock is StorkTypes {
             (block.timestamp < nextBlockLockTime) == _expectedVal,
             "block locked"
         );
+        createNullBlock();
+        blockCount++;
         _;
     }
 
@@ -46,17 +48,18 @@ contract StorkBlock is StorkTypes {
     mapping(string => QueryInfo) public queryInfo;
 
     uint256 public blockLockDuration;
-    uint256 public blockCreateDuration;
+    uint256 public blockTxAddDuration;
+    uint256 public blockCreateTime = 40 seconds;
     uint256 public nextBlockLockTime = block.timestamp;
     uint256 public percentageToPass;
 
     function setNextBlockLockTime() public {
         nextBlockLockTime += blockLockDuration;
-        blockCreateDuration = nextBlockLockTime - 1 minutes;
+        blockTxAddDuration = nextBlockLockTime - blockCreateTime;
     }
 
     function setNewBlockLockDuration(uint256 _blockLockDuration) public {
-        blockLockDuration = _blockLockDuration * 1 minutes;
+        blockLockDuration = _blockLockDuration * 1 seconds;
         setNextBlockLockTime();
     }
 
@@ -64,9 +67,20 @@ contract StorkBlock is StorkTypes {
         percentageToPass = _percentageToPass;
     }
 
-    // temporary function for testing
+    function returnTimeLockStart() public view returns (uint256) {
+        return blockTxAddDuration;
+    }
+
     function returnBlockTimeStamp() public view returns (uint256) {
         return (block.timestamp);
+    }
+
+    function timeLeftForTx() public view returns (uint256) {
+        return (blockTxAddDuration - block.timestamp);
+    }
+
+    function timeLeftForBlockComlpetion() public view returns (uint256) {
+        return (blockCreateTime + blockTxAddDuration - block.timestamp);
     }
 
     function setOperationData() internal {
@@ -93,5 +107,13 @@ contract StorkBlock is StorkTypes {
             blockLockTime: block.timestamp + blockLockDuration,
             isSealed: false
         });
+    }
+
+    function returnBlockTxs(uint32 _blockNumber)
+        public
+        view
+        returns (bytes memory)
+    {
+        return (abi.encode(blocks[_blockNumber].txHash));
     }
 }
