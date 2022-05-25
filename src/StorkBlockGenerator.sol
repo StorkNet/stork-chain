@@ -6,6 +6,7 @@ import "./StorkBlock.sol";
 contract StorkBlockGenerator is StorkBlock {
     struct TxData {
         address[] validators;
+        mapping(address => bool) validatorIsAdded;
         uint256 storkId;
         bytes stork;
         bytes storkParameter;
@@ -46,12 +47,12 @@ contract StorkBlockGenerator is StorkBlock {
         bytes calldata _txStorkParameter,
         string calldata fallbackFunction
     ) external isNotLocked(true) {
-        if (blockCreateDuration < block.timestamp) {
+        if (blockTxAddDuration < block.timestamp) {
+            blockCount++;
             addTxToBlock();
             setNextBlockLockTime();
-            blockCount++;
+            createNullBlock();
         }
-
 
         bytes32 txHashed = keccak256(
             abi.encode(
@@ -72,6 +73,8 @@ contract StorkBlockGenerator is StorkBlock {
         if (queryInfo[_queryName].hasStork) {
             txData[txHashed].hasStork = true;
             txData[txHashed].stork = _txStork;
+            txData[txHashed].storkId = _storkId;
+            
         }
         if (queryInfo[_queryName].hasParameter) {
             txData[txHashed].hasParameter = true;
@@ -83,7 +86,7 @@ contract StorkBlockGenerator is StorkBlock {
         }
 
         //add msg.sender to the list of proposers for the tx
-        if (!validatorInfo[msg.sender].isAdded) {
+        if (!txData[txHashed].validatorIsAdded[msg.sender]) {
             txData[txHashed].validators.push(msg.sender);
             validatorInfo[msg.sender].txCount += queryInfo[_queryName].cost;
         }
@@ -91,18 +94,22 @@ contract StorkBlockGenerator is StorkBlock {
         // this creates the list of unique validators
         if (!validatorInfo[msg.sender].isAdded) {
             validators.push(msg.sender);
+            validatorInfo[msg.sender].isAdded = true;
         }
     }
 
-    function addTxToBlock() internal {
-        blocks[blockCount].isSealed = true;
+    function addTxToBlock() internal isNotSealed {
         for (uint8 i; i < txHashes.length; ++i) {
             if (
                 txData[txHashes[i]].validators.length >=
-                validators.length * percentageToPass
+                (validators.length * percentageToPass) / 100
             ) {
-                blocks[blockCount].txHash.push(txHashes[i]);
+                blocks[blockCount-1].txHash.push(txHashes[i]);
+                blocks[blockCount-1].minConfirmations = uint8(
+                    txData[txHashes[i]].validators.length
+                );
             }
-        }
+        }     
+        blocks[blockCount-1].isSealed = true;
     }
 }
