@@ -15,7 +15,6 @@ contract StorkBlock is StorkTypes {
         uint8[] contractsTxCounts;
         uint8[] validatorsTxCounts;
         uint8 minConfirmations;
-        string cid;
         uint256 blockLockTime;
         bool isSealed;
     }
@@ -32,13 +31,18 @@ contract StorkBlock is StorkTypes {
             (block.timestamp < nextBlockLockTime) == _expectedVal,
             "block locked"
         );
-        createNullBlock();
-        blockCount++;
+
+        if(_expectedVal == false) {
+            createNullBlock();
+            blockCount++;
+        }
         _;
     }
 
     modifier isNotSealed() {
-        require(blocks[blockCount - 1].isSealed == false, "block not sealed");
+        require(blocks[blockCount].isSealed == false, "block sealed");
+        createNullBlock();
+        blockCount++;
         _;
     }
 
@@ -103,17 +107,15 @@ contract StorkBlock is StorkTypes {
             contractsTxCounts: new uint8[](0),
             validatorsTxCounts: new uint8[](0),
             minConfirmations: 0,
-            cid: "",
             blockLockTime: block.timestamp + blockLockDuration,
             isSealed: false
         });
     }
 
-    function returnBlockTxs(uint32 _blockNumber)
-        public
-        view
-        returns (bytes memory)
-    {
-        return (abi.encode(blocks[_blockNumber].txHash));
+    function returnBlock(uint32 _blockNumber) public returns (bytes memory) {
+        emit NewBlock(_blockNumber, abi.encode(blocks[_blockNumber]));
+        return (abi.encode(blocks[_blockNumber]));
     }
+
+    event NewBlock(uint256 indexed _blockNumber, bytes _blockData);
 }
