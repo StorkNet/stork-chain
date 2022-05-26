@@ -26,23 +26,12 @@ contract StorkBlock is StorkTypes {
         bool hasFallback;
     }
 
-    modifier isNotLocked(bool _expectedVal) {
-        require(
-            (block.timestamp < nextBlockLockTime) == _expectedVal,
-            "block locked"
-        );
-
-        if(_expectedVal == false) {
+    modifier isNotSealed() {
+        require(blocks[blockCount].isSealed == false, "block sealed");
+        if (nextBlockLockTime < block.timestamp) {
             createNullBlock();
             blockCount++;
         }
-        _;
-    }
-
-    modifier isNotSealed() {
-        require(blocks[blockCount].isSealed == false, "block sealed");
-        createNullBlock();
-        blockCount++;
         _;
     }
 
@@ -113,9 +102,9 @@ contract StorkBlock is StorkTypes {
     }
 
     function returnBlock(uint32 _blockNumber) public returns (bytes memory) {
-        emit NewBlock(_blockNumber, abi.encode(blocks[_blockNumber]));
+        emit NewBlock(abi.encode(blocks[_blockNumber]));
         return (abi.encode(blocks[_blockNumber]));
     }
 
-    event NewBlock(uint256 indexed _blockNumber, bytes _blockData);
+    event NewBlock(bytes _blockData);
 }
