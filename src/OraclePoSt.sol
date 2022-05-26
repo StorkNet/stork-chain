@@ -23,8 +23,8 @@ contract OraclePoSt is PoH {
         uint8 _validatorsRequired,
         address[] calldata validators
     ) external {
-        for (uint256 i = postValidators.length; i > 0; i--) {
-            postValidators.pop();
+        for (uint256 i = blockValidators.length; i > 0; i--) {
+            blockValidators.pop();
         }
 
         for (uint256 i; i < validators.length; ++i) {
@@ -76,5 +76,13 @@ contract OraclePoSt is PoH {
 
     function getBlockValidators() public view returns (address[] memory) {
         return blockValidators;
+    }
+
+    function getBlockValidatorChallenge() public view returns (bytes32) {
+        bytes32 validatorChallenge;
+        for (uint8 i; i < blockValidators.length; ++i) {
+            validatorChallenge ^= keccak256(abi.encode(blockValidators[i]));
+        }
+        return (validatorChallenge);
     }
 }
