@@ -12,7 +12,7 @@ contract OraclePoSt {
 
     function getBlockValidators() public view returns (address[] memory) {}
 
-    function getBlockValidatorProof() public pure returns (bytes32) {}
+    function getBlockValidatorChallenge() public view returns (bytes32) {}
 }
 
 contract ZKTransaction {
@@ -24,7 +24,7 @@ contract ZKTransaction {
 
     function generateZKTxs(bytes32[] memory txs) external {}
 
-    function getZkTxs() external view returns (bytes32[] memory) {}
+    function getZkTxs() external returns (bytes32[] memory) {}
 }
 
 contract StorkBlockGenerator is StorkBlock {
@@ -136,6 +136,8 @@ contract StorkBlockGenerator is StorkBlock {
         }
     }
 
+    mapping(address => bool) public isClientAddedToBlock;
+
     function addTxToBlock() internal isNotSealed {
         blocks[blockCount].isSealed = true;
         uint8 validationsRequired = uint8(
@@ -144,10 +146,15 @@ contract StorkBlockGenerator is StorkBlock {
         for (uint8 i = 0; i < txCount; ++i) {
             if (txData[txHashes[i]].validators.length >= validationsRequired) {
                 blocks[blockCount].txHash.push(txHashes[i]);
-                blocks[blockCount].contracts.push(txData[txHashes[i]].client);
-                blocks[blockCount].contractsTxCounts.push(
-                    clientCounter[txData[txHashes[i]].client]
-                );
+                if (isClientAddedToBlock[txData[txHashes[i]].client] == false) {
+                    blocks[blockCount].contracts.push(
+                        txData[txHashes[i]].client
+                    );
+                    blocks[blockCount].contractsTxCounts.push(
+                        clientCounter[txData[txHashes[i]].client]
+                    );
+                    isClientAddedToBlock[txData[txHashes[i]].client] = true;
+                }
                 blocks[blockCount].minConfirmations = validationsRequired;
             }
         }
@@ -160,13 +167,14 @@ contract StorkBlockGenerator is StorkBlock {
         }
 
         PoSt.startPoSt(key, validationsRequired, validators);
-        blocks[blockCount].validatorProof = PoSt.getBlockValidatorProof();
+        blocks[blockCount].validators = validators;
+        blocks[blockCount].validatorProof = PoSt.getBlockValidatorChallenge();
         PoSt.startPoSt(key, 1, validators);
         blocks[blockCount].blockMiner = PoSt.getBlockValidators()[0];
 
-        zkTx.startPoSt(key, uint8(blocks[blockCount].txHash.length), validators);
-        zkTx.generateZKTxs(blocks[blockCount].txHash);
-        blocks[blockCount].txHash = zkTx.getZkTxs();
+        // zkTx.startPoSt(key, uint8(blocks[blockCount].txHash.length), validators);
+        // zkTx.generateZKTxs(blocks[blockCount].txHash);
+        // blocks[blockCount].txHash = zkTx.getZkTxs();
 
         blocks[blockCount].blockHash = keccak256(
             abi.encode(blocks[blockCount])

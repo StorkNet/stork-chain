@@ -26,15 +26,19 @@ contract ZKTransaction is PoH {
         uint8 _validatorsRequired,
         address[] calldata validators
     ) external {
-        for (uint256 i = postValidators.length; i > 0; i--) {
-            postValidators.pop();
+        for (uint256 i = blockValidators.length; i > 0; i--) {
+            blockValidators.pop();
         }
-
+        uint256 scaleUp = 1 + _validatorsRequired / validators.length;
         for (uint256 i; i < validators.length; ++i) {
             uint256 validatorPower = poh[validators[i]].validatorFreqBackup;
             freqSum += validatorPower;
             postValidators.push(
-                PoSt(validators[i], validatorPower, validatorPower)
+                PoSt(
+                    validators[i],
+                    validatorPower * scaleUp,
+                    validatorPower * scaleUp
+                )
             );
         }
         findValidators(_key, _validatorsRequired);
@@ -46,9 +50,7 @@ contract ZKTransaction is PoH {
         uint256 freqCounter = 0;
         uint256 nextValidator = 0;
         for (uint256 i = 0; i < _size; i++) {
-            loc =
-                ((((loc + (key++ % _size)) % validatorCount) + 1) % freqSum) +
-                1;
+            loc = ((((loc + (key++ % _size)) % validatorCount) + 1));
             freqCounter = 0;
             uint256 indexCounter = 0;
             while (freqCounter < loc) {
@@ -61,16 +63,14 @@ contract ZKTransaction is PoH {
                         (nextValidator + indexCounter) % validatorCount
                     ].validatorFreq;
                 }
-                indexCounter = ((indexCounter + 1) % validatorCount) + 1;
+                indexCounter++;
             }
             blockValidators.push(
                 postValidators[
                     (nextValidator + indexCounter - 1) % validatorCount
                 ].validatorAddr
             );
-            freqSum -= postValidators[
-                (nextValidator + indexCounter - 1) % validatorCount
-            ].validatorFreq;
+
             if (
                 postValidators[
                     (nextValidator + indexCounter - 1) % validatorCount
@@ -81,7 +81,7 @@ contract ZKTransaction is PoH {
                 ].validatorFreq--;
             }
 
-            nextValidator = indexCounter;
+            nextValidator = indexCounter % validatorCount;
         }
     }
 
