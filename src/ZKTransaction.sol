@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "./PoH.sol";
+contract PoH {
+    function getValidatorPoH(address _validator) external returns (uint256) {}
+}
 
-contract ZKTransaction is PoH {
+contract ZKTransaction {
     address[] public blockValidators;
-    uint256 public freqSum;
 
     struct PoSt {
         address validatorAddr;
@@ -14,8 +15,10 @@ contract ZKTransaction is PoH {
     }
     PoSt[] public postValidators;
 
-    constructor() {
-        initValidatorPoH();
+    PoH public immutable pohContract;
+
+    constructor(address _pohAddr) {
+        pohContract = PoH(_pohAddr);
     }
 
     mapping(address => uint256[]) public addressTx;
@@ -31,8 +34,7 @@ contract ZKTransaction is PoH {
         }
         uint256 scaleUp = 1 + _validatorsRequired / validators.length;
         for (uint256 i; i < validators.length; ++i) {
-            uint256 validatorPower = poh[validators[i]].validatorFreqBackup;
-            freqSum += validatorPower;
+            uint256 validatorPower = pohContract.getValidatorPoH(validators[i]);
             postValidators.push(
                 PoSt(
                     validators[i],
