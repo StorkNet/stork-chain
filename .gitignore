@@ -12,3 +12,5 @@ node_modules
 
 # Ignore flattened files
 flattened.txt
+scripts/deploy_local.sh
+src/Test.sol
