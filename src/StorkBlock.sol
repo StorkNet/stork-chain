@@ -25,6 +25,11 @@ contract StorkBlock is StorkTypes {
         bool hasFallback;
     }
 
+    struct AddressInfo {
+        uint8 txCount;
+        bool isAdded;
+    }
+
     modifier blockInOperation() {
         if (blockHasStarted == false) {
             blockHasStarted = true;
@@ -54,7 +59,19 @@ contract StorkBlock is StorkTypes {
     uint256 public blockCreateTime = 40 seconds;
     uint256 public nextBlockLockTime = block.timestamp;
     uint256 public percentageToPass;
-    bool blockHasStarted;
+    bool public blockHasStarted;
+    uint256 public currentTime;
+
+    bytes32[] public txHashes;
+    address[] public validators;
+    address[] public clients;
+
+    uint256 public txCount;
+    uint256 public key;
+
+    mapping(address => AddressInfo) public clientCounter;
+    mapping(address => AddressInfo) public validatorInfo;
+    mapping(address => bool) public isClientAddedToBlock;
 
     function setNextBlockLockTime() public {
         nextBlockLockTime += blockLockDuration;
@@ -95,7 +112,7 @@ contract StorkBlock is StorkTypes {
     }
 
     function createNullBlock() internal {
-        blockHasStarted = false;
+        resetVariables();
         blocks[blockCount] = Block({
             blockNumber: uint32(blockCount),
             validatorProof: bytes32(0),
@@ -109,6 +126,33 @@ contract StorkBlock is StorkTypes {
             blockLockTime: block.timestamp + blockLockDuration,
             isSealed: false
         });
+    }
+
+    function resetVariables() internal {
+        blockHasStarted = false;
+
+        for (uint256 i; i < clients.length; i++) {
+            clientCounter[clients[i]] = AddressInfo(0, false);
+            isClientAddedToBlock[clients[i]] = false;
+        }
+
+        for (uint256 i; i < validators.length; i++) {
+            validatorInfo[validators[i]] = AddressInfo(0, false);
+        }
+
+        for (uint256 i = txHashes.length; i > 0; i--) {
+            txHashes.pop();
+        }
+
+        for (uint256 i = validators.length; i > 0; i--) {
+            validators.pop();
+        }
+
+        for (uint256 i = clients.length; i > 0; i--) {
+            clients.pop();
+        }
+
+        txCount = 0;
     }
 
     function returnBlock(uint32 _blockNumber) public returns (bytes memory) {

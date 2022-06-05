@@ -7,7 +7,7 @@ contract PoH {
 
 contract OraclePoSt {
     address[] private blockValidators;
-    uint256 public freqSum;
+    uint256 internal freqSum;
 
     struct PoSt {
         address validatorAddr;
@@ -29,6 +29,10 @@ contract OraclePoSt {
     ) external {
         for (uint256 i = blockValidators.length; i > 0; i--) {
             blockValidators.pop();
+        }
+
+        for (uint256 i = postValidators.length; i > 0; i--) {
+            postValidators.pop();
         }
 
         for (uint256 i; i < validators.length; ++i) {
