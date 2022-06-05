@@ -8,7 +8,6 @@ contract StorkBlock is StorkTypes {
         uint32 blockNumber;
         bytes32 validatorProof;
         address blockMiner;
-        bytes32 blockHash;
         bytes32[] txHash;
         address[] contracts;
         address[] validators;
@@ -26,6 +25,14 @@ contract StorkBlock is StorkTypes {
         bool hasFallback;
     }
 
+    modifier blockInOperation() {
+        if (blockHasStarted == false) {
+            blockHasStarted = true;
+            setNextBlockLockTime();
+        }
+        _;
+    }
+
     modifier isNotSealed() {
         require(blocks[blockCount].isSealed == false, "block sealed");
         if (nextBlockLockTime < block.timestamp) {
@@ -36,6 +43,8 @@ contract StorkBlock is StorkTypes {
     }
 
     mapping(uint32 => Block) public blocks;
+    mapping(uint32 => bytes32) public blockHashes;
+
     uint32 public blockCount;
 
     mapping(string => QueryInfo) public queryInfo;
@@ -45,6 +54,7 @@ contract StorkBlock is StorkTypes {
     uint256 public blockCreateTime = 40 seconds;
     uint256 public nextBlockLockTime = block.timestamp;
     uint256 public percentageToPass;
+    bool blockHasStarted;
 
     function setNextBlockLockTime() public {
         nextBlockLockTime += blockLockDuration;
@@ -81,15 +91,15 @@ contract StorkBlock is StorkTypes {
         queryInfo["createStork"] = QueryInfo(1, true, false, false);
         queryInfo["updateStorkById"] = QueryInfo(1, true, true, false);
         queryInfo["deleteStorkById"] = QueryInfo(1, false, false, false);
-        queryInfo["requestStorkById"] = QueryInfo(1, false, false, true);
+        queryInfo["requestStorkById"] = QueryInfo(3, false, false, true);
     }
 
     function createNullBlock() internal {
+        blockHasStarted = false;
         blocks[blockCount] = Block({
             blockNumber: uint32(blockCount),
             validatorProof: bytes32(0),
             blockMiner: address(0),
-            blockHash: bytes32(0),
             txHash: new bytes32[](0),
             contracts: new address[](0),
             validators: new address[](0),
@@ -102,9 +112,17 @@ contract StorkBlock is StorkTypes {
     }
 
     function returnBlock(uint32 _blockNumber) public returns (bytes memory) {
-        emit NewBlock(abi.encode(blocks[_blockNumber]));
+        emit NewBlock(
+            _blockNumber,
+            blockHashes[_blockNumber],
+            abi.encode(blocks[_blockNumber])
+        );
         return (abi.encode(blocks[_blockNumber]));
     }
 
-    event NewBlock(bytes _blockData);
+    event NewBlock(
+        uint256 indexed _blockNumber,
+        bytes32 indexed _blockHash,
+        bytes _blockData
+    );
 }
