@@ -42,21 +42,7 @@ contract StorkBlockGenerator is StorkBlock {
         bool isProposed;
     }
 
-    struct ValidatorInfo {
-        uint8 txCount;
-        bool isAdded;
-    }
-
-    bytes32[] public txHashes;
-    address[] public validators;
-
-    uint256 public txCount;
-    uint256 key;
-
     mapping(bytes32 => TxData) public txData;
-    mapping(address => uint8) public clientCounter;
-    mapping(address => ValidatorInfo) public validatorInfo;
-    mapping(address => bool) public isClientAddedToBlock;
 
     OraclePoSt public immutable PoSt;
     ZKTransaction public immutable zkTx;
@@ -67,12 +53,18 @@ contract StorkBlockGenerator is StorkBlock {
         address _PoStAddr,
         address _zkTxAddr
     ) {
+        blockCount = 0;
+        nextBlockLockTime = block.timestamp;
         percentageToPass = _percentageToPass;
         setNewBlockLockDuration(_blockLockDuration);
         PoSt = OraclePoSt(_PoStAddr);
         zkTx = ZKTransaction(_zkTxAddr);
         createNullBlock();
         setOperationData();
+    }
+
+    function updateTime() public {
+        currentTime = block.timestamp;
     }
 
     function proposeTxForBlock(
@@ -84,59 +76,63 @@ contract StorkBlockGenerator is StorkBlock {
         string calldata fallbackFunction,
         uint256 _key
     ) external isNotSealed blockInOperation {
-        if (blockTxAddDuration < block.timestamp) {
+        if (blockTxAddDuration <= block.timestamp) {
             addTxToBlock();
-            setNextBlockLockTime();
-            createNullBlock();
-        }
-        key = _key;
-        bytes32 txHashed = keccak256(
-            abi.encode(
-                _clientAddr,
-                _queryName,
-                _storkId,
-                _txStork,
-                _txStorkParameter
-            )
-        );
+        } else {
+            key = _key;
+            bytes32 txHashed = keccak256(
+                abi.encode(
+                    _clientAddr,
+                    _queryName,
+                    _storkId,
+                    _txStork,
+                    _txStorkParameter
+                )
+            );
 
-        // if the txHash doesn't exist, add it to the TxList and increase the txCount of the client
-        if (!txData[txHashed].isProposed) {
-            clientCounter[_clientAddr] += queryInfo[_queryName].cost;
-            txData[txHashed].isProposed = true;
-            txData[txHashed].client = _clientAddr;
-            txHashes.push(txHashed);
-            txCount++;
-        }
+            // if the txHash doesn't exist, add it to the TxList and increase the txCount of the client
+            if (!txData[txHashed].isProposed) {
+                if (!clientCounter[_clientAddr].isAdded) {
+                    clientCounter[_clientAddr].isAdded = true;
+                    clients.push(_clientAddr);
+                }
+                clientCounter[_clientAddr].txCount += queryInfo[_queryName]
+                    .cost;
+                txData[txHashed].isProposed = true;
+                txData[txHashed].client = _clientAddr;
+                txHashes.push(txHashed);
+                txCount++;
+            }
 
-        if (queryInfo[_queryName].hasStork) {
-            txData[txHashed].hasStork = true;
-            txData[txHashed].stork = _txStork;
-            txData[txHashed].storkId = _storkId;
-        }
-        if (queryInfo[_queryName].hasParameter) {
-            txData[txHashed].hasParameter = true;
-            txData[txHashed].storkParameter = _txStorkParameter;
-        }
-        if (queryInfo[_queryName].hasFallback) {
-            txData[txHashed].hasFallback = true;
-            txData[txHashed].fallbackFunction = fallbackFunction;
-        }
+            if (queryInfo[_queryName].hasStork) {
+                txData[txHashed].hasStork = true;
+                txData[txHashed].stork = _txStork;
+                txData[txHashed].storkId = _storkId;
+            }
+            if (queryInfo[_queryName].hasParameter) {
+                txData[txHashed].hasParameter = true;
+                txData[txHashed].storkParameter = _txStorkParameter;
+            }
+            if (queryInfo[_queryName].hasFallback) {
+                txData[txHashed].hasFallback = true;
+                txData[txHashed].fallbackFunction = fallbackFunction;
+            }
 
-        //add msg.sender to the list of proposers for the tx
-        if (!txData[txHashed].validatorIsAdded[msg.sender]) {
-            txData[txHashed].validators.push(msg.sender);
-            validatorInfo[msg.sender].txCount += queryInfo[_queryName].cost;
-        }
+            //add msg.sender to the list of proposers for the tx
+            if (!txData[txHashed].validatorIsAdded[msg.sender]) {
+                txData[txHashed].validators.push(msg.sender);
+                validatorInfo[msg.sender].txCount += queryInfo[_queryName].cost;
+            }
 
-        // this creates the list of unique validators
-        if (!validatorInfo[msg.sender].isAdded) {
-            validators.push(msg.sender);
-            validatorInfo[msg.sender].isAdded = true;
+            // this creates the list of unique validators
+            if (!validatorInfo[msg.sender].isAdded) {
+                validators.push(msg.sender);
+                validatorInfo[msg.sender].isAdded = true;
+            }
         }
     }
 
-    function addTxToBlock() internal isNotSealed {
+    function addTxToBlock() public isNotSealed {
         blocks[blockCount].isSealed = true;
         uint8 validationsRequired = uint8(
             (validators.length * percentageToPass) / 100
@@ -149,7 +145,7 @@ contract StorkBlockGenerator is StorkBlock {
                         txData[txHashes[i]].client
                     );
                     blocks[blockCount].contractsTxCounts.push(
-                        clientCounter[txData[txHashes[i]].client]
+                        clientCounter[txData[txHashes[i]].client].txCount
                     );
                     isClientAddedToBlock[txData[txHashes[i]].client] = true;
                 }
@@ -177,10 +173,24 @@ contract StorkBlockGenerator is StorkBlock {
         zkTx.generateZKTxs(blocks[blockCount].txHash);
         blocks[blockCount].txHash = zkTx.getZkTxs();
 
-        blockHashes[blockCount] = keccak256(
-            abi.encode(blocks[blockCount])
-        );
+        blockHashes[blockCount] = keccak256(abi.encode(blocks[blockCount]));
 
         blockCount++;
+        setNextBlockLockTime();
+        createNullBlock();
     }
 }
+
+// 0x364C5DA8CF1B73FB53A2BEdBcfb07190CD814d6c
+// 0xd9145CCE52D386f254917e481eB44e9943F39138
+
+// createStork
+
+// 0 1 2
+
+// 0x0000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000060000000000000000000000000000000000000000000000000000000000000001f7368616e6b617200000000000000000000000000000000000000000000000000
+// 0x000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000000026869000000000000000000000000000000000000000000000000000000000000
+
+// test
+
+// 17
