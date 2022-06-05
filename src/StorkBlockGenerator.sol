@@ -47,17 +47,17 @@ contract StorkBlockGenerator is StorkBlock {
         bool isAdded;
     }
 
-    mapping(address => uint8) public clientCounter;
-
-    // index input for txData
     bytes32[] public txHashes;
-    mapping(bytes32 => TxData) public txData;
+    address[] public validators;
 
     uint256 public txCount;
-    address[] public validators;
     uint256 key;
 
+    mapping(bytes32 => TxData) public txData;
+    mapping(address => uint8) public clientCounter;
     mapping(address => ValidatorInfo) public validatorInfo;
+    mapping(address => bool) public isClientAddedToBlock;
+
     OraclePoSt public immutable PoSt;
     ZKTransaction public immutable zkTx;
 
@@ -83,7 +83,7 @@ contract StorkBlockGenerator is StorkBlock {
         bytes calldata _txStorkParameter,
         string calldata fallbackFunction,
         uint256 _key
-    ) external isNotSealed {
+    ) external isNotSealed blockInOperation {
         if (blockTxAddDuration < block.timestamp) {
             addTxToBlock();
             setNextBlockLockTime();
@@ -136,8 +136,6 @@ contract StorkBlockGenerator is StorkBlock {
         }
     }
 
-    mapping(address => bool) public isClientAddedToBlock;
-
     function addTxToBlock() internal isNotSealed {
         blocks[blockCount].isSealed = true;
         uint8 validationsRequired = uint8(
@@ -167,18 +165,22 @@ contract StorkBlockGenerator is StorkBlock {
         }
 
         PoSt.startPoSt(key, validationsRequired, validators);
-        blocks[blockCount].validators = validators;
         blocks[blockCount].validatorProof = PoSt.getBlockValidatorChallenge();
         PoSt.startPoSt(key, 1, validators);
         blocks[blockCount].blockMiner = PoSt.getBlockValidators()[0];
 
-        // zkTx.startPoSt(key, uint8(blocks[blockCount].txHash.length), validators);
-        // zkTx.generateZKTxs(blocks[blockCount].txHash);
-        // blocks[blockCount].txHash = zkTx.getZkTxs();
+        zkTx.startPoSt(
+            key,
+            uint8(blocks[blockCount].txHash.length),
+            validators
+        );
+        zkTx.generateZKTxs(blocks[blockCount].txHash);
+        blocks[blockCount].txHash = zkTx.getZkTxs();
 
-        blocks[blockCount].blockHash = keccak256(
+        blockHashes[blockCount] = keccak256(
             abi.encode(blocks[blockCount])
         );
+
         blockCount++;
     }
 }
