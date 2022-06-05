@@ -1,9 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "./PoH.sol";
+contract PoH {
+    function getValidatorPoH(address _validator) external returns (uint256) {}
+}
 
-contract OraclePoSt is PoH {
+contract OraclePoSt {
     address[] private blockValidators;
     uint256 public freqSum;
 
@@ -14,8 +16,10 @@ contract OraclePoSt is PoH {
     }
     PoSt[] public postValidators;
 
-    constructor() {
-        initValidatorPoH();
+    PoH public immutable pohContract;
+
+    constructor(address _pohAddr) {
+        pohContract = PoH(_pohAddr);
     }
 
     function startPoSt(
@@ -28,7 +32,7 @@ contract OraclePoSt is PoH {
         }
 
         for (uint256 i; i < validators.length; ++i) {
-            uint256 validatorPower = poh[validators[i]].validatorFreqBackup;
+            uint256 validatorPower = pohContract.getValidatorPoH(validators[i]);
             freqSum += validatorPower;
             postValidators.push(
                 PoSt(validators[i], validatorPower, validatorPower)
