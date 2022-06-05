@@ -2,7 +2,11 @@
 pragma solidity ^0.8.0;
 
 contract PoH {
-    function getValidatorPoH(address _validator) external returns (uint256) {}
+    function getValidatorPoH(address _validator)
+        external
+        view
+        returns (uint256)
+    {}
 }
 
 contract ZKTransaction {
@@ -32,6 +36,11 @@ contract ZKTransaction {
         for (uint256 i = blockValidators.length; i > 0; i--) {
             blockValidators.pop();
         }
+
+        for (uint256 i = postValidators.length; i > 0; i--) {
+            postValidators.pop();
+        }
+
         uint256 scaleUp = 1 + _validatorsRequired / validators.length;
         for (uint256 i; i < validators.length; ++i) {
             uint256 validatorPower = pohContract.getValidatorPoH(validators[i]);
