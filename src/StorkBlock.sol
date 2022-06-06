@@ -30,6 +30,14 @@ contract StorkBlock is StorkTypes {
         bool isAdded;
     }
 
+    enum Queries {
+        createPhalanxType,
+        createStork,
+        updateStorkById,
+        deleteStorkById,
+        requestStorkById
+    }
+
     modifier blockInOperation() {
         if (blockHasStarted == false) {
             blockHasStarted = true;
@@ -52,7 +60,8 @@ contract StorkBlock is StorkTypes {
 
     uint32 public blockCount;
 
-    mapping(string => QueryInfo) public queryInfo;
+    mapping(Queries => QueryInfo) public queryInfo;
+    mapping(bytes32 => Queries) public queryNames;
 
     uint256 public blockLockDuration;
     uint256 public blockTxAddDuration;
@@ -104,11 +113,29 @@ contract StorkBlock is StorkTypes {
     }
 
     function setOperationData() internal {
-        queryInfo["createPhalanxType"] = QueryInfo(1, false, false, false);
-        queryInfo["createStork"] = QueryInfo(1, true, false, false);
-        queryInfo["updateStorkById"] = QueryInfo(1, true, true, false);
-        queryInfo["deleteStorkById"] = QueryInfo(1, false, false, false);
-        queryInfo["requestStorkById"] = QueryInfo(3, false, false, true);
+        queryInfo[Queries.createPhalanxType] = QueryInfo(
+            1,
+            false,
+            false,
+            false
+        );
+        queryNames[keccak256(abi.encode("createPhalanxType"))] = Queries
+            .createPhalanxType;
+
+        queryInfo[Queries.createStork] = QueryInfo(1, true, false, false);
+        queryNames[keccak256(abi.encode("createStork"))] = Queries.createStork;
+
+        queryInfo[Queries.updateStorkById] = QueryInfo(1, true, true, false);
+        queryNames[keccak256(abi.encode("updateStorkById"))] = Queries
+            .updateStorkById;
+
+        queryInfo[Queries.deleteStorkById] = QueryInfo(1, false, false, false);
+        queryNames[keccak256(abi.encode("deleteStorkById"))] = Queries
+            .deleteStorkById;
+
+        queryInfo[Queries.requestStorkById] = QueryInfo(3, false, false, true);
+        queryNames[keccak256(abi.encode("requestStorkById"))] = Queries
+            .requestStorkById;
     }
 
     function createNullBlock() internal {
