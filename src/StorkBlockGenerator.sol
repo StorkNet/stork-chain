@@ -27,18 +27,38 @@ contract ZKTransaction {
     function getZkTxs() external returns (bytes32[] memory) {}
 }
 
+contract StorkDataStore is StorkTypes {
+    function createNewPhalanx(
+        address _addr,
+        bytes32 _phalanxName,
+        bytes calldata _phalanxData
+    ) public {}
+
+    function createNewData(
+        address _addr,
+        bytes32 _phalanxName,
+        uint8 _storkId,
+        bytes calldata _storkData
+    ) public {}
+
+    function deleteData(
+        address _addr,
+        bytes32 _phalanxName,
+        uint8 _storkId
+    ) public {}
+}
+
 contract StorkBlockGenerator is StorkBlock {
     struct TxData {
         address client;
         address[] validators;
         mapping(address => bool) validatorIsAdded;
-        uint256 storkId;
+        bytes32 queryName;
+        bytes32 storkName;
+        uint8 storkId;
         bytes stork;
         bytes storkParameter;
         string fallbackFunction;
-        bool hasStork;
-        bool hasParameter;
-        bool hasFallback;
         bool isProposed;
     }
 
@@ -46,12 +66,14 @@ contract StorkBlockGenerator is StorkBlock {
 
     OraclePoSt public immutable PoSt;
     ZKTransaction public immutable zkTx;
+    StorkDataStore public immutable dataStore;
 
     constructor(
         uint256 _blockLockDuration,
         uint256 _percentageToPass,
         address _PoStAddr,
-        address _zkTxAddr
+        address _zkTxAddr,
+        address _dataStoreAddr
     ) {
         blockCount = 0;
         nextBlockLockTime = block.timestamp;
@@ -59,6 +81,7 @@ contract StorkBlockGenerator is StorkBlock {
         setNewBlockLockDuration(_blockLockDuration);
         PoSt = OraclePoSt(_PoStAddr);
         zkTx = ZKTransaction(_zkTxAddr);
+        dataStore = StorkDataStore(_dataStoreAddr);
         createNullBlock();
         setOperationData();
     }
@@ -69,8 +92,9 @@ contract StorkBlockGenerator is StorkBlock {
 
     function proposeTxForBlock(
         address _clientAddr,
-        string calldata _queryName,
-        uint256 _storkId,
+        bytes32 _queryName,
+        bytes32 _storkName,
+        uint8 _storkId,
         bytes calldata _txStork,
         bytes calldata _txStorkParameter,
         string calldata fallbackFunction,
@@ -96,32 +120,28 @@ contract StorkBlockGenerator is StorkBlock {
                     clientCounter[_clientAddr].isAdded = true;
                     clients.push(_clientAddr);
                 }
-                clientCounter[_clientAddr].txCount += queryInfo[_queryName]
-                    .cost;
+                clientCounter[_clientAddr].txCount += queryInfo[
+                    queryNames[_queryName]
+                ].cost;
                 txData[txHashed].isProposed = true;
                 txData[txHashed].client = _clientAddr;
                 txHashes.push(txHashed);
                 txCount++;
             }
 
-            if (queryInfo[_queryName].hasStork) {
-                txData[txHashed].hasStork = true;
-                txData[txHashed].stork = _txStork;
-                txData[txHashed].storkId = _storkId;
-            }
-            if (queryInfo[_queryName].hasParameter) {
-                txData[txHashed].hasParameter = true;
-                txData[txHashed].storkParameter = _txStorkParameter;
-            }
-            if (queryInfo[_queryName].hasFallback) {
-                txData[txHashed].hasFallback = true;
-                txData[txHashed].fallbackFunction = fallbackFunction;
-            }
+            txData[txHashed].queryName = _queryName;
+            txData[txHashed].storkName = _storkName;
+            txData[txHashed].stork = _txStork;
+            txData[txHashed].storkId = _storkId;
+            txData[txHashed].storkParameter = _txStorkParameter;
+            txData[txHashed].fallbackFunction = fallbackFunction;
 
             //add msg.sender to the list of proposers for the tx
             if (!txData[txHashed].validatorIsAdded[msg.sender]) {
                 txData[txHashed].validators.push(msg.sender);
-                validatorInfo[msg.sender].txCount += queryInfo[_queryName].cost;
+                validatorInfo[msg.sender].txCount += queryInfo[
+                    queryNames[_queryName]
+                ].cost;
             }
 
             // this creates the list of unique validators
@@ -150,6 +170,38 @@ contract StorkBlockGenerator is StorkBlock {
                     isClientAddedToBlock[txData[txHashes[i]].client] = true;
                 }
                 blocks[blockCount].minConfirmations = validationsRequired;
+
+                if (
+                    queryNames[txData[txHashes[i]].queryName] ==
+                    Queries.createPhalanxType
+                ) {
+                    dataStore.createNewPhalanx(
+                        txData[txHashes[i]].client,
+                        txData[txHashes[i]].storkName,
+                        txData[txHashes[i]].stork
+                    );
+                } else if (
+                    queryNames[txData[txHashes[i]].queryName] ==
+                    Queries.createStork ||
+                    queryNames[txData[txHashes[i]].queryName] ==
+                    Queries.updateStorkById
+                ) {
+                    dataStore.createNewData(
+                        txData[txHashes[i]].client,
+                        txData[txHashes[i]].storkName,
+                        txData[txHashes[i]].storkId,
+                        txData[txHashes[i]].stork
+                    );
+                } else if (
+                    queryNames[txData[txHashes[i]].queryName] ==
+                    Queries.deleteStorkById
+                ) {
+                    dataStore.deleteData(
+                        txData[txHashes[i]].client,
+                        txData[txHashes[i]].storkName,
+                        txData[txHashes[i]].storkId
+                    );
+                }
             }
         }
 
@@ -184,12 +236,12 @@ contract StorkBlockGenerator is StorkBlock {
 // 0x364C5DA8CF1B73FB53A2BEdBcfb07190CD814d6c
 // 0xd9145CCE52D386f254917e481eB44e9943F39138
 
-// createStork
-
+// 0x05829d564d347477146e61e94a6e02209a17369b320c41bf88a63c9372a552e7
+// 0x51e8ccf16b7d0bf6dbff3704faa1cc765b8473004eafd29e94bfe47167ff5e93
 // 0 1 2
 
 // 0x0000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000060000000000000000000000000000000000000000000000000000000000000001f7368616e6b617200000000000000000000000000000000000000000000000000
-// 0x000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000000026869000000000000000000000000000000000000000000000000000000000000
+// 0x0000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000060000000000000000000000000000000000000000000000000000000000000001f7368616e6b617200000000000000000000000000000000000000000000000000
 
 // test
 
