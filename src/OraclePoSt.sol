@@ -14,9 +14,9 @@ contract OraclePoSt {
         uint256 validatorFreq;
         uint256 validatorFreqBackup;
     }
-    PoSt[] public postValidators;
+    PoSt[] private postValidators;
 
-    PoH public immutable pohContract;
+    PoH private immutable pohContract;
 
     constructor(address _pohAddr) {
         pohContract = PoH(_pohAddr);
@@ -82,11 +82,11 @@ contract OraclePoSt {
         }
     }
 
-    function getBlockValidators() public view returns (address[] memory) {
+    function getBlockValidators() external view returns (address[] memory) {
         return blockValidators;
     }
 
-    function getBlockValidatorChallenge() public view returns (bytes32) {
+    function getBlockValidatorChallenge() external view returns (bytes32) {
         bytes32 validatorChallenge;
         for (uint8 i; i < blockValidators.length; ++i) {
             validatorChallenge ^= keccak256(abi.encode(blockValidators[i]));

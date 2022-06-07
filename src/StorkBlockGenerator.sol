@@ -54,11 +54,11 @@ contract StorkBlockGenerator is StorkBlock {
         address[] validators;
         mapping(address => bool) validatorIsAdded;
         bytes32 queryName;
-        bytes32 storkName;
+        bytes32 phalanxName;
         uint8 storkId;
         bytes stork;
         bytes storkParameter;
-        string fallbackFunction;
+        string _fallbackFunction;
         bool isProposed;
     }
 
@@ -86,18 +86,14 @@ contract StorkBlockGenerator is StorkBlock {
         setOperationData();
     }
 
-    function updateTime() public {
-        currentTime = block.timestamp;
-    }
-
     function proposeTxForBlock(
         address _clientAddr,
-        bytes32 _queryName,
-        bytes32 _storkName,
+        string calldata _queryName,
+        bytes32 _phalanxName,
         uint8 _storkId,
         bytes calldata _txStork,
         bytes calldata _txStorkParameter,
-        string calldata fallbackFunction,
+        string calldata _fallbackFunction,
         uint256 _key
     ) external isNotSealed blockInOperation {
         if (blockTxAddDuration <= block.timestamp) {
@@ -120,28 +116,25 @@ contract StorkBlockGenerator is StorkBlock {
                     clientCounter[_clientAddr].isAdded = true;
                     clients.push(_clientAddr);
                 }
-                clientCounter[_clientAddr].txCount += queryInfo[
-                    queryNames[_queryName]
-                ].cost;
+                clientCounter[_clientAddr].txCount += queryInfo[_queryName]
+                    .cost;
                 txData[txHashed].isProposed = true;
                 txData[txHashed].client = _clientAddr;
                 txHashes.push(txHashed);
                 txCount++;
             }
 
-            txData[txHashed].queryName = _queryName;
-            txData[txHashed].storkName = _storkName;
+            txData[txHashed].queryName = keccak256(abi.encode(_queryName));
+            txData[txHashed].phalanxName = _phalanxName;
             txData[txHashed].stork = _txStork;
             txData[txHashed].storkId = _storkId;
             txData[txHashed].storkParameter = _txStorkParameter;
-            txData[txHashed].fallbackFunction = fallbackFunction;
+            txData[txHashed]._fallbackFunction = _fallbackFunction;
 
             //add msg.sender to the list of proposers for the tx
             if (!txData[txHashed].validatorIsAdded[msg.sender]) {
                 txData[txHashed].validators.push(msg.sender);
-                validatorInfo[msg.sender].txCount += queryInfo[
-                    queryNames[_queryName]
-                ].cost;
+                validatorInfo[msg.sender].txCount += queryInfo[_queryName].cost;
             }
 
             // this creates the list of unique validators
@@ -152,7 +145,7 @@ contract StorkBlockGenerator is StorkBlock {
         }
     }
 
-    function addTxToBlock() public isNotSealed {
+    function addTxToBlock() internal isNotSealed {
         blocks[blockCount].isSealed = true;
         uint8 validationsRequired = uint8(
             (validators.length * percentageToPass) / 100
@@ -172,35 +165,37 @@ contract StorkBlockGenerator is StorkBlock {
                 blocks[blockCount].minConfirmations = validationsRequired;
 
                 if (
-                    queryNames[txData[txHashes[i]].queryName] ==
-                    Queries.createPhalanxType
+                    txData[txHashes[i]].queryName ==
+                    queryInfo["createPhalanxType"].queryHash
                 ) {
                     dataStore.createNewPhalanx(
                         txData[txHashes[i]].client,
-                        txData[txHashes[i]].storkName,
+                        txData[txHashes[i]].phalanxName,
                         txData[txHashes[i]].stork
                     );
                 } else if (
-                    queryNames[txData[txHashes[i]].queryName] ==
-                    Queries.createStork ||
-                    queryNames[txData[txHashes[i]].queryName] ==
-                    Queries.updateStorkById
+                    txData[txHashes[i]].queryName ==
+                    queryInfo["createStork"].queryHash ||
+                    txData[txHashes[i]].queryName ==
+                    queryInfo["updateStorkById"].queryHash
                 ) {
                     dataStore.createNewData(
                         txData[txHashes[i]].client,
-                        txData[txHashes[i]].storkName,
+                        txData[txHashes[i]].phalanxName,
                         txData[txHashes[i]].storkId,
                         txData[txHashes[i]].stork
                     );
                 } else if (
-                    queryNames[txData[txHashes[i]].queryName] ==
-                    Queries.deleteStorkById
+                    txData[txHashes[i]].queryName ==
+                    queryInfo["deleteStorkById"].queryHash
                 ) {
                     dataStore.deleteData(
                         txData[txHashes[i]].client,
-                        txData[txHashes[i]].storkName,
+                        txData[txHashes[i]].phalanxName,
                         txData[txHashes[i]].storkId
                     );
+                } else {
+                    revert("invalid query name");
                 }
             }
         }
@@ -232,17 +227,3 @@ contract StorkBlockGenerator is StorkBlock {
         createNullBlock();
     }
 }
-
-// 0x364C5DA8CF1B73FB53A2BEdBcfb07190CD814d6c
-// 0xd9145CCE52D386f254917e481eB44e9943F39138
-
-// 0x05829d564d347477146e61e94a6e02209a17369b320c41bf88a63c9372a552e7
-// 0x51e8ccf16b7d0bf6dbff3704faa1cc765b8473004eafd29e94bfe47167ff5e93
-// 0 1 2
-
-// 0x0000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000060000000000000000000000000000000000000000000000000000000000000001f7368616e6b617200000000000000000000000000000000000000000000000000
-// 0x0000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000060000000000000000000000000000000000000000000000000000000000000001f7368616e6b617200000000000000000000000000000000000000000000000000
-
-// test
-
-// 17
