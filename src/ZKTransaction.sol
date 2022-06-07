@@ -10,23 +10,23 @@ contract PoH {
 }
 
 contract ZKTransaction {
-    address[] public blockValidators;
+    address[] private blockValidators;
 
     struct PoSt {
         address validatorAddr;
         uint256 validatorFreq;
         uint256 validatorFreqBackup;
     }
-    PoSt[] public postValidators;
+    PoSt[] private postValidators;
 
-    PoH public immutable pohContract;
+    PoH private immutable pohContract;
 
     constructor(address _pohAddr) {
         pohContract = PoH(_pohAddr);
     }
 
-    mapping(address => uint256[]) public addressTx;
-    bytes32[] zkTxs;
+    mapping(address => uint256[]) private addressTx;
+    bytes32[] private zkTxs;
 
     function startPoSt(
         uint256 _key,

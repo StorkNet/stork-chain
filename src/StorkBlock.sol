@@ -20,6 +20,7 @@ contract StorkBlock is StorkTypes {
 
     struct QueryInfo {
         uint8 cost;
+        bytes32 queryHash;
         bool hasStork;
         bool hasParameter;
         bool hasFallback;
@@ -28,14 +29,6 @@ contract StorkBlock is StorkTypes {
     struct AddressInfo {
         uint8 txCount;
         bool isAdded;
-    }
-
-    enum Queries {
-        createPhalanxType,
-        createStork,
-        updateStorkById,
-        deleteStorkById,
-        requestStorkById
     }
 
     modifier blockInOperation() {
@@ -60,8 +53,7 @@ contract StorkBlock is StorkTypes {
 
     uint32 public blockCount;
 
-    mapping(Queries => QueryInfo) public queryInfo;
-    mapping(bytes32 => Queries) public queryNames;
+    mapping(string => QueryInfo) public queryInfo;
 
     uint256 public blockLockDuration;
     uint256 public blockTxAddDuration;
@@ -82,60 +74,76 @@ contract StorkBlock is StorkTypes {
     mapping(address => AddressInfo) public validatorInfo;
     mapping(address => bool) public isClientAddedToBlock;
 
-    function setNextBlockLockTime() public {
+    function setNextBlockLockTime() internal {
         nextBlockLockTime += blockLockDuration;
         blockTxAddDuration = nextBlockLockTime - blockCreateTime;
     }
 
-    function setNewBlockLockDuration(uint256 _blockLockDuration) public {
+    function setNewBlockLockDuration(uint256 _blockLockDuration) internal {
         blockLockDuration = _blockLockDuration * 1 seconds;
         setNextBlockLockTime();
     }
 
-    function setPercentageToPass(uint256 _percentageToPass) external {
+    function setPercentageToPass(uint256 _percentageToPass) internal {
         percentageToPass = _percentageToPass;
     }
 
-    function returnTimeLockStart() public view returns (uint256) {
-        return blockTxAddDuration;
-    }
-
-    function returnBlockTimeStamp() public view returns (uint256) {
-        return (block.timestamp);
-    }
-
-    function timeLeftForTx() public view returns (uint256) {
-        return (blockTxAddDuration - block.timestamp);
-    }
-
-    function timeLeftForBlockComlpetion() public view returns (uint256) {
-        return (blockCreateTime + blockTxAddDuration - block.timestamp);
-    }
-
     function setOperationData() internal {
-        queryInfo[Queries.createPhalanxType] = QueryInfo(
+        queryInfo["createPhalanxType"] = QueryInfo(
             1,
+            keccak256(abi.encode("createPhalanxType")),
             false,
             false,
             false
         );
-        queryNames[keccak256(abi.encode("createPhalanxType"))] = Queries
-            .createPhalanxType;
 
-        queryInfo[Queries.createStork] = QueryInfo(1, true, false, false);
-        queryNames[keccak256(abi.encode("createStork"))] = Queries.createStork;
+        queryInfo["createStork"] = QueryInfo(
+            1,
+            keccak256(abi.encode("createStork")),
+            true,
+            false,
+            false
+        );
 
-        queryInfo[Queries.updateStorkById] = QueryInfo(1, true, true, false);
-        queryNames[keccak256(abi.encode("updateStorkById"))] = Queries
-            .updateStorkById;
+        queryInfo["updateStorkById"] = QueryInfo(
+            1,
+            keccak256(abi.encode("updateStorkById")),
+            true,
+            true,
+            false
+        );
 
-        queryInfo[Queries.deleteStorkById] = QueryInfo(1, false, false, false);
-        queryNames[keccak256(abi.encode("deleteStorkById"))] = Queries
-            .deleteStorkById;
+        queryInfo["deleteStorkById"] = QueryInfo(
+            1,
+            keccak256(abi.encode("deleteStorkById")),
+            false,
+            false,
+            false
+        );
 
-        queryInfo[Queries.requestStorkById] = QueryInfo(3, false, false, true);
-        queryNames[keccak256(abi.encode("requestStorkById"))] = Queries
-            .requestStorkById;
+        queryInfo["requestStorkById"] = QueryInfo(
+            3,
+            keccak256(abi.encode("requestStorkById")),
+            false,
+            false,
+            true
+        );
+    }
+
+    function addOperationData(
+        string calldata _queryName,
+        uint8 _cost,
+        bool _hasStork,
+        bool _hasParameter,
+        bool _hasFallback
+    ) public {
+        queryInfo[_queryName] = QueryInfo(
+            _cost,
+            keccak256(abi.encode(_queryName)),
+            _hasStork,
+            _hasParameter,
+            _hasFallback
+        );
     }
 
     function createNullBlock() internal {
@@ -182,7 +190,7 @@ contract StorkBlock is StorkTypes {
         txCount = 0;
     }
 
-    function returnBlock(uint32 _blockNumber) public returns (bytes memory) {
+    function returnBlock(uint32 _blockNumber) external returns (bytes memory) {
         emit NewBlock(
             _blockNumber,
             blockHashes[_blockNumber],
