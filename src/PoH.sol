@@ -6,6 +6,7 @@ contract PoH {
 
     constructor() {
         initValidatorPoH();
+        poh[msg.sender] = 3;
     }
 
     function initValidatorPoH() public {
