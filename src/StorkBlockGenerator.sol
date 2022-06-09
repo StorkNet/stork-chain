@@ -62,11 +62,11 @@ contract StorkBlockGenerator is StorkBlock {
         bool isProposed;
     }
 
-    mapping(bytes32 => TxData) public txData;
+    mapping(bytes32 => TxData) internal txData;
 
-    OraclePoSt public immutable PoSt;
-    ZKTransaction public immutable zkTx;
-    StorkDataStore public immutable dataStore;
+    OraclePoSt internal immutable PoSt;
+    ZKTransaction internal immutable zkTx;
+    StorkDataStore internal immutable dataStore;
 
     constructor(
         uint256 _blockLockDuration,
@@ -145,7 +145,7 @@ contract StorkBlockGenerator is StorkBlock {
         }
     }
 
-    function addTxToBlock() internal isNotSealed {
+    function addTxToBlock() public isNotSealed {
         blocks[blockCount].isSealed = true;
         uint8 validationsRequired = uint8(
             (validators.length * percentageToPass) / 100

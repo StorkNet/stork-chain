@@ -48,31 +48,31 @@ contract StorkBlock is StorkTypes {
         _;
     }
 
-    mapping(uint32 => Block) public blocks;
-    mapping(uint32 => bytes32) public blockHashes;
+    mapping(uint32 => Block) internal blocks;
+    mapping(uint32 => bytes32) internal blockHashes;
 
-    uint32 public blockCount;
+    uint32 internal blockCount;
 
-    mapping(string => QueryInfo) public queryInfo;
+    mapping(string => QueryInfo) internal queryInfo;
 
-    uint256 public blockLockDuration;
-    uint256 public blockTxAddDuration;
-    uint256 public blockCreateTime = 40 seconds;
-    uint256 public nextBlockLockTime = block.timestamp;
-    uint256 public percentageToPass;
-    bool public blockHasStarted;
-    uint256 public currentTime;
+    uint256 internal blockLockDuration;
+    uint256 internal blockTxAddDuration;
+    uint256 internal blockCreateTime = 40 seconds;
+    uint256 internal nextBlockLockTime = block.timestamp;
+    uint256 internal percentageToPass;
+    bool internal blockHasStarted;
+    uint256 internal currentTime;
 
-    bytes32[] public txHashes;
-    address[] public validators;
-    address[] public clients;
+    bytes32[] internal txHashes;
+    address[] internal validators;
+    address[] internal clients;
 
-    uint256 public txCount;
-    uint256 public key;
+    uint256 internal txCount;
+    uint256 internal key;
 
-    mapping(address => AddressInfo) public clientCounter;
-    mapping(address => AddressInfo) public validatorInfo;
-    mapping(address => bool) public isClientAddedToBlock;
+    mapping(address => AddressInfo) internal clientCounter;
+    mapping(address => AddressInfo) internal validatorInfo;
+    mapping(address => bool) internal isClientAddedToBlock;
 
     function setNextBlockLockTime() internal {
         nextBlockLockTime += blockLockDuration;
