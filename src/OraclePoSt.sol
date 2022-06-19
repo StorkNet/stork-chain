@@ -42,7 +42,7 @@ contract OraclePoSt {
                 PoSt(validators[i], validatorPower, validatorPower)
             );
         }
-        findMiner(_key, _validatorsRequired);
+        findMiner(_key % validators.length, _validatorsRequired);
     }
 
     function findMiner(uint256 key, uint256 _size) internal {

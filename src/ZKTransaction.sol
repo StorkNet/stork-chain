@@ -10,22 +10,43 @@ contract PoH {
 }
 
 contract ZKTransaction {
-    address[] private blockValidators;
+    struct TxData {
+        address client;
+        address[] validators;
+        mapping(address => bool) validatorIsAdded;
+        bytes32 queryName;
+        bytes32 phalanxName;
+        uint8 storkId;
+        bytes stork;
+        bytes storkParameter;
+        string _fallbackFunction;
+        bool isProposed;
+    }
 
     struct PoSt {
         address validatorAddr;
         uint256 validatorFreq;
         uint256 validatorFreqBackup;
     }
+
     PoSt[] private postValidators;
+    address[] private blockValidators;
 
     PoH private immutable pohContract;
+    address private storkBlockGenerator;
 
     constructor(address _pohAddr) {
         pohContract = PoH(_pohAddr);
     }
 
-    mapping(address => uint256[]) private addressTx;
+    function setStorkBlockGeneratorAddress(address _storkBlockGeneratorAddress)
+        public
+    {
+        require(storkBlockGenerator == address(0), "ZKTx- SBG addr set");
+        storkBlockGenerator = _storkBlockGeneratorAddress;
+    }
+
+    mapping(address => bytes32[]) private addressTx;
     bytes32[] private zkTxs;
 
     function startPoSt(
@@ -52,7 +73,7 @@ contract ZKTransaction {
                 )
             );
         }
-        findValidators(_key, _validatorsRequired);
+        findValidators(_key % validators.length, _validatorsRequired);
     }
 
     function findValidators(uint256 key, uint256 _size) internal {
@@ -99,7 +120,7 @@ contract ZKTransaction {
     function generateZKTxs(bytes32[] memory txs) external {
         for (uint256 i = 0; i < txs.length; i++) {
             zkTxs.push(keccak256(abi.encode(txs[i], blockValidators[i])));
-            addressTx[blockValidators[i]].push(i);
+            addressTx[blockValidators[i]].push(txs[i]);
         }
     }
 
@@ -113,5 +134,5 @@ contract ZKTransaction {
         return (zkTxs);
     }
 
-    event ZKTransactionList(address indexed _addr, uint256[] _txs);
+    event ZKTransactionList(address indexed _addr, bytes32[] _txs);
 }
