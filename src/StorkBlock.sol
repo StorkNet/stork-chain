@@ -48,10 +48,10 @@ contract StorkBlock is StorkTypes {
         _;
     }
 
-    mapping(uint32 => Block) internal blocks;
-    mapping(uint32 => bytes32) internal blockHashes;
+    mapping(uint32 => Block) public blocks;
+    mapping(uint32 => bytes32) public blockHashes;
 
-    uint32 internal blockCount;
+    uint32 public blockCount;
 
     mapping(string => QueryInfo) internal queryInfo;
 
@@ -64,10 +64,10 @@ contract StorkBlock is StorkTypes {
     uint256 internal currentTime;
 
     bytes32[] internal txHashes;
-    address[] internal validators;
+    address[] public validators;
     address[] internal clients;
 
-    uint256 internal txCount;
+    uint256 public txCount;
     uint256 internal key;
 
     mapping(address => AddressInfo) internal clientCounter;
@@ -190,18 +190,21 @@ contract StorkBlock is StorkTypes {
         txCount = 0;
     }
 
-    function returnBlock(uint32 _blockNumber) external returns (bytes memory) {
+    function announceNewBlock(uint32 _blockNumber) public {
         emit NewBlock(
             _blockNumber,
             blockHashes[_blockNumber],
+            blocks[_blockNumber].blockMiner,
+            blocks[_blockNumber].validators,
             abi.encode(blocks[_blockNumber])
         );
-        return (abi.encode(blocks[_blockNumber]));
     }
 
     event NewBlock(
         uint256 indexed _blockNumber,
         bytes32 indexed _blockHash,
+        address _blockMiner,
+        address[] _validators,
         bytes _blockData
     );
 }
