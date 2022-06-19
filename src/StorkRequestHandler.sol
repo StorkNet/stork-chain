@@ -57,7 +57,7 @@ contract StorkRequestHandler {
         if (
             block.timestamp < requests[_reqId].startTimeStamp + closeTimeStamp
         ) {
-            require(!validatorExist[_reqId][msg.sender], "validator on job");
+            require(!validatorExist[_reqId][msg.sender], "ReqHandler- validator on job");
             validatorExist[_reqId][msg.sender] = true;
             requests[_reqId].validators.push(msg.sender);
             requests[_reqId].key += _key;
@@ -89,7 +89,7 @@ contract StorkRequestHandler {
     }
 
     function exposeKeyToElectedMiner(uint256 _reqId) external {
-        require(msg.sender == requests[_reqId].miner, "wrong account");
+        require(msg.sender == requests[_reqId].miner, "ReqHandler- wrong account");
         emit KeyExposed(_reqId, requests[_reqId].key);
     }
 
