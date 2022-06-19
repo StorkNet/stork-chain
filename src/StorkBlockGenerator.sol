@@ -28,6 +28,10 @@ contract ZKTransaction {
 }
 
 contract StorkDataStore is StorkTypes {
+    function setStorkBlockGeneratorAddress(address _storkBlockGeneratorAddress)
+        external
+    {}
+
     function createNewPhalanx(
         address _addr,
         bytes32 _phalanxName,
@@ -99,7 +103,7 @@ contract StorkBlockGenerator is StorkBlock {
         if (blockTxAddDuration <= block.timestamp) {
             addTxToBlock();
         } else {
-            key = _key;
+            key += _key;
             bytes32 txHashed = keccak256(
                 abi.encode(
                     _clientAddr,
@@ -194,8 +198,6 @@ contract StorkBlockGenerator is StorkBlock {
                         txData[txHashes[i]].phalanxName,
                         txData[txHashes[i]].storkId
                     );
-                } else {
-                    revert("invalid query name");
                 }
             }
         }
@@ -220,8 +222,14 @@ contract StorkBlockGenerator is StorkBlock {
         zkTx.generateZKTxs(blocks[blockCount].txHash);
         blocks[blockCount].txHash = zkTx.getZkTxs();
 
-        blockHashes[blockCount] = keccak256(abi.encode(blocks[blockCount]));
+        blockHashes[blockCount] = keccak256(
+            abi.encode(
+                blocks[blockCount].blockMiner,
+                abi.encode(blocks[blockCount])
+            )
+        );
 
+        announceNewBlock(blockCount);
         blockCount++;
         setNextBlockLockTime();
         createNullBlock();
