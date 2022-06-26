@@ -5,6 +5,7 @@ import "./StorkTypes.sol";
 
 contract StorkBlock is StorkTypes {
     struct Block {
+        bytes32 parentHash;
         uint32 blockNumber;
         bytes32 validatorProof;
         address blockMiner;
@@ -149,6 +150,7 @@ contract StorkBlock is StorkTypes {
     function createNullBlock() internal {
         resetVariables();
         blocks[blockCount] = Block({
+            parentHash: blockHashes[blockCount - 1],
             blockNumber: uint32(blockCount),
             validatorProof: bytes32(0),
             blockMiner: address(0),
