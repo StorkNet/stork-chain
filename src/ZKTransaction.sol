@@ -10,6 +10,14 @@ contract PoH {
 }
 
 contract ZKTransaction {
+    modifier onlyBlockGenerator() {
+        require(
+            msg.sender == storkBlockGenerator,
+            "PoSt- oracle can only be called by the block generator"
+        );
+        _;
+    }
+
     struct TxData {
         address client;
         address[] validators;
@@ -39,13 +47,6 @@ contract ZKTransaction {
         pohContract = PoH(_pohAddr);
     }
 
-    function setStorkBlockGeneratorAddress(address _storkBlockGeneratorAddress)
-        public
-    {
-        require(storkBlockGenerator == address(0), "ZKTx- SBG addr set");
-        storkBlockGenerator = _storkBlockGeneratorAddress;
-    }
-
     mapping(address => bytes32[]) private addressTx;
     bytes32[] private zkTxs;
 
@@ -53,7 +54,7 @@ contract ZKTransaction {
         uint256 _key,
         uint8 _validatorsRequired,
         address[] calldata validators
-    ) external {
+    ) external onlyBlockGenerator {
         for (uint256 i = blockValidators.length; i > 0; i--) {
             blockValidators.pop();
         }
@@ -117,14 +118,14 @@ contract ZKTransaction {
         }
     }
 
-    function generateZKTxs(bytes32[] memory txs) external {
+    function generateZKTxs(bytes32[] memory txs) external onlyBlockGenerator {
         for (uint256 i = 0; i < txs.length; i++) {
             zkTxs.push(keccak256(abi.encode(txs[i], blockValidators[i])));
             addressTx[blockValidators[i]].push(txs[i]);
         }
     }
 
-    function getZkTxs() external returns (bytes32[] memory) {
+    function getZkTxs() external onlyBlockGenerator returns (bytes32[] memory) {
         for (uint8 i = 0; i < blockValidators.length; i++) {
             emit ZKTransactionList(
                 blockValidators[i],
@@ -135,4 +136,12 @@ contract ZKTransaction {
     }
 
     event ZKTransactionList(address indexed _addr, bytes32[] _txs);
+
+    function setBlockGenerator(address _storkBlockGenerator) external {
+        require(
+            _storkBlockGenerator == address(0),
+            "PoSt- storkBlockGenerator already set"
+        );
+        storkBlockGenerator = _storkBlockGenerator;
+    }
 }
