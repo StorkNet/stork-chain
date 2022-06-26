@@ -22,12 +22,12 @@ contract StorkRequestHandler {
         bool complete;
     }
 
-    uint256 public closeTimeStamp;
+    uint256 internal closeTimeStamp;
 
-    StorkDataStore public immutable storkDataStore;
+    StorkDataStore internal immutable storkDataStore;
     mapping(uint256 => Request) public requests;
-    mapping(uint256 => mapping(address => bool)) public validatorExist;
-    mapping(uint256 => bool) public isRequestExist;
+    mapping(uint256 => mapping(address => bool)) internal validatorExist;
+    mapping(uint256 => bool) internal isRequestExist;
 
     constructor(uint256 _closeTime, address _storkDataStore) {
         closeTimeStamp = _closeTime;
