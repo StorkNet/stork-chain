@@ -18,6 +18,7 @@ contract StorkRequestHandler {
         uint256 key;
         string fallbackFunction;
         string destinationNetwork;
+        address destinationContract;
         uint256 startTimeStamp;
         bytes32 phalanxName;
         bool complete;
@@ -42,6 +43,7 @@ contract StorkRequestHandler {
         uint256 _key,
         string calldata _fallbackFunction,
         string calldata _destinationNetwork,
+        address _destinationContract,
         uint8[] calldata _ids
     ) external {
         if (!isRequestExist[_reqId]) {
@@ -54,6 +56,7 @@ contract StorkRequestHandler {
                 _key,
                 _fallbackFunction,
                 _destinationNetwork,
+                _destinationContract,
                 block.timestamp,
                 _phalanxName,
                 false
@@ -93,6 +96,7 @@ contract StorkRequestHandler {
             requests[_reqId].miner,
             requests[_reqId].fallbackFunction,
             requests[_reqId].destinationNetwork,
+            requests[_reqId].destinationContract,
             keccak256(abi.encode(data, _key, requests[_reqId].miner)),
             data
         );
@@ -111,6 +115,7 @@ contract StorkRequestHandler {
         address miner,
         string _fallbackFunction,
         string _destinationNetwork,
+        address _destinationContract,
         bytes32 zkChallenge,
         bytes data
     );
