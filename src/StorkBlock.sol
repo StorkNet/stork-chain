@@ -5,7 +5,6 @@ import "./StorkTypes.sol";
 
 contract StorkBlock is StorkTypes {
     struct Block {
-        bytes32 parentHash;
         uint32 blockNumber;
         bytes32 validatorProof;
         address blockMiner;
@@ -137,7 +136,7 @@ contract StorkBlock is StorkTypes {
         bool _hasStork,
         bool _hasParameter,
         bool _hasFallback
-    ) public {
+    ) external {
         queryInfo[_queryName] = QueryInfo(
             _cost,
             keccak256(abi.encode(_queryName)),
@@ -150,7 +149,6 @@ contract StorkBlock is StorkTypes {
     function createNullBlock() internal {
         resetVariables();
         blocks[blockCount] = Block({
-            parentHash: blockHashes[blockCount - 1],
             blockNumber: uint32(blockCount),
             validatorProof: bytes32(0),
             blockMiner: address(0),
@@ -192,7 +190,7 @@ contract StorkBlock is StorkTypes {
         txCount = 0;
     }
 
-    function announceNewBlock(uint32 _blockNumber) public {
+    function announceNewBlock(uint32 _blockNumber) internal {
         emit NewBlock(
             _blockNumber,
             blockHashes[_blockNumber],
