@@ -40,7 +40,7 @@ contract ZKTransaction {
     }
 
     function setStorkBlockGeneratorAddress(address _storkBlockGeneratorAddress)
-        public
+        external
     {
         require(storkBlockGenerator == address(0), "ZKTx- SBG addr set");
         storkBlockGenerator = _storkBlockGeneratorAddress;

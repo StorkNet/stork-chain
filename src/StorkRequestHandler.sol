@@ -17,17 +17,19 @@ contract StorkRequestHandler {
         uint8[] ids;
         uint256 key;
         string fallbackFunction;
+        string destinationNetwork;
+        address destinationContract;
         uint256 startTimeStamp;
         bytes32 phalanxName;
         bool complete;
     }
 
-    uint256 public closeTimeStamp;
+    uint256 internal closeTimeStamp;
 
-    StorkDataStore public immutable storkDataStore;
+    StorkDataStore internal immutable storkDataStore;
     mapping(uint256 => Request) public requests;
-    mapping(uint256 => mapping(address => bool)) public validatorExist;
-    mapping(uint256 => bool) public isRequestExist;
+    mapping(uint256 => mapping(address => bool)) internal validatorExist;
+    mapping(uint256 => bool) internal isRequestExist;
 
     constructor(uint256 _closeTime, address _storkDataStore) {
         closeTimeStamp = _closeTime;
@@ -40,6 +42,8 @@ contract StorkRequestHandler {
         bytes32 _phalanxName,
         uint256 _key,
         string calldata _fallbackFunction,
+        string calldata _destinationNetwork,
+        address _destinationContract,
         uint8[] calldata _ids
     ) external {
         if (!isRequestExist[_reqId]) {
@@ -51,6 +55,8 @@ contract StorkRequestHandler {
                 _ids,
                 _key,
                 _fallbackFunction,
+                _destinationNetwork,
+                _destinationContract,
                 block.timestamp,
                 _phalanxName,
                 false
@@ -89,6 +95,8 @@ contract StorkRequestHandler {
             _reqId,
             requests[_reqId].miner,
             requests[_reqId].fallbackFunction,
+            requests[_reqId].destinationNetwork,
+            requests[_reqId].destinationContract,
             keccak256(abi.encode(data, _key, requests[_reqId].miner)),
             data
         );
@@ -106,6 +114,8 @@ contract StorkRequestHandler {
         uint256 indexed _reqId,
         address miner,
         string _fallbackFunction,
+        string _destinationNetwork,
+        address _destinationContract,
         bytes32 zkChallenge,
         bytes data
     );

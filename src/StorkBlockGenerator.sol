@@ -10,9 +10,9 @@ contract OraclePoSt {
         address[] calldata validators
     ) external {}
 
-    function getBlockValidators() public view returns (address[] memory) {}
+    function getBlockValidators() external view returns (address[] memory) {}
 
-    function getBlockValidatorChallenge() public view returns (bytes32) {}
+    function getBlockValidatorChallenge() external view returns (bytes32) {}
 }
 
 contract ZKTransaction {
@@ -36,20 +36,20 @@ contract StorkDataStore is StorkTypes {
         address _addr,
         bytes32 _phalanxName,
         bytes calldata _phalanxData
-    ) public {}
+    ) external {}
 
     function createNewData(
         address _addr,
         bytes32 _phalanxName,
         uint8 _storkId,
         bytes calldata _storkData
-    ) public {}
+    ) external {}
 
     function deleteData(
         address _addr,
         bytes32 _phalanxName,
         uint8 _storkId
-    ) public {}
+    ) external {}
 }
 
 contract StorkBlockGenerator is StorkBlock {

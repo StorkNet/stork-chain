@@ -136,7 +136,7 @@ contract StorkBlock is StorkTypes {
         bool _hasStork,
         bool _hasParameter,
         bool _hasFallback
-    ) public {
+    ) external {
         queryInfo[_queryName] = QueryInfo(
             _cost,
             keccak256(abi.encode(_queryName)),
@@ -190,7 +190,7 @@ contract StorkBlock is StorkTypes {
         txCount = 0;
     }
 
-    function announceNewBlock(uint32 _blockNumber) public {
+    function announceNewBlock(uint32 _blockNumber) internal {
         emit NewBlock(
             _blockNumber,
             blockHashes[_blockNumber],

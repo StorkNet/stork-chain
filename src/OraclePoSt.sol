@@ -6,6 +6,14 @@ contract PoH {
 }
 
 contract OraclePoSt {
+    modifier onlyBlockGenerator() {
+        require(
+            msg.sender == storkBlockGenerator,
+            "PoSt- oracle can only be called by the block generator"
+        );
+        _;
+    }
+
     address[] private blockValidators;
     uint256 internal freqSum;
 
@@ -17,6 +25,7 @@ contract OraclePoSt {
     PoSt[] private postValidators;
 
     PoH private immutable pohContract;
+    address private storkBlockGenerator;
 
     constructor(address _pohAddr) {
         pohContract = PoH(_pohAddr);
@@ -26,7 +35,7 @@ contract OraclePoSt {
         uint256 _key,
         uint8 _validatorsRequired,
         address[] calldata validators
-    ) external {
+    ) external onlyBlockGenerator {
         for (uint256 i = blockValidators.length; i > 0; i--) {
             blockValidators.pop();
         }
@@ -92,5 +101,13 @@ contract OraclePoSt {
             validatorChallenge ^= keccak256(abi.encode(blockValidators[i]));
         }
         return (validatorChallenge);
+    }
+
+    function setBlockGenerator(address _storkBlockGenerator) external {
+        require(
+            storkBlockGenerator == address(0),
+            "PoSt- storkBlockGenerator already set"
+        );
+        storkBlockGenerator = _storkBlockGenerator;
     }
 }
