@@ -9,6 +9,7 @@ contract PoH {
         poh[msg.sender] = 3;
     }
 
+    // Default weighted Scores for Each Miner
     function initValidatorPoH() internal {
         poh[0x073b53769a3CdbdD9C6cE24fEb87EB366e8C607C] = 3;
         poh[0x39F1Bde194d7ef4b4F4c1C1dFcD6a9295225437B] = 1;

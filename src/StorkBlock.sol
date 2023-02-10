@@ -4,25 +4,41 @@ pragma solidity ^0.8.0;
 import "./StorkTypes.sol";
 
 contract StorkBlock is StorkTypes {
+    // Block structure
     struct Block {
         uint32 blockNumber;
+
+        // The generated proof from the generation of a block
         bytes32 validatorProof;
+
+        // Elected miner
         address blockMiner;
         bytes32[] txHash;
         address[] contracts;
         address[] validators;
+
+        //number of Txs in the contract and the number of Txs by a single validator
         uint8[] contractsTxCounts;
         uint8[] validatorsTxCounts;
+
+        // Minimum number of confirmations required for this block to be accepted on mainnet
         uint8 minConfirmations;
         uint256 blockLockTime;
         bool isSealed;
     }
 
+    // Structure of a query
     struct QueryInfo {
         uint8 cost;
         bytes32 queryHash;
+
+        //Contrains data, for example Requests do not
         bool hasStork;
+
+        //Parameter wise CRUD operations
         bool hasParameter;
+
+        //Triggers only of Request queries
         bool hasFallback;
     }
 
@@ -55,10 +71,15 @@ contract StorkBlock is StorkTypes {
 
     mapping(string => QueryInfo) internal queryInfo;
 
+    // Replace with chainlink counter 
+
+    // Time based actions are used for block generation 
     uint256 internal blockLockDuration;
     uint256 internal blockTxAddDuration;
     uint256 internal blockCreateTime = 40 seconds;
     uint256 internal nextBlockLockTime = block.timestamp;
+
+    // Percentage of votes required for a Tx/Block to be considered valid
     uint256 internal percentageToPass;
     bool internal blockHasStarted;
     uint256 internal currentTime;
@@ -88,6 +109,7 @@ contract StorkBlock is StorkTypes {
         percentageToPass = _percentageToPass;
     }
 
+    // Query operations for StorkNet based off the Query Structure 
     function setOperationData() internal {
         queryInfo["createPhalanxType"] = QueryInfo(
             1,
@@ -130,6 +152,7 @@ contract StorkBlock is StorkTypes {
         );
     }
 
+    // Add a new Query Type
     function addOperationData(
         string calldata _queryName,
         uint8 _cost,
